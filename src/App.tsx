@@ -141,7 +141,6 @@ function App() {
   const [showChat, setShowChat] = useState(false)
   const [currentAreaId, setCurrentAreaId] = useState<string | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
-  const moveCallbackRef = useRef<((pos: { x: number; y: number; z: number }, rotation: number) => void) | null>(null)
 
   // マルチプレイヤー（探索中のみ有効）
   const { self, remotePlayers, chatMessages, connected, sendMove, sendChat } = useMultiplayer(isExploring)

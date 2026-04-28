@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Sky } from '@react-three/drei'
 import * as THREE from 'three'
@@ -74,7 +74,7 @@ function Butterflies() {
   return (
     <points ref={pointsRef}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} count={count} array={positions} itemSize={3} />
       </bufferGeometry>
       <pointsMaterial color="#FFD700" size={0.22} transparent opacity={0.8} sizeAttenuation depthWrite={false} />
     </points>
@@ -254,7 +254,7 @@ export default function NagayaWorld({
   const lastAreaRef = useRef<string | null>(null)
 
   // プレイヤー移動フック
-  const { playerRef, posRef } = usePlayerMovement({
+  const { playerRef } = usePlayerMovement({
     enabled: isMoving,
     onMove: (pos, rotation) => {
       onMove?.(pos, rotation)

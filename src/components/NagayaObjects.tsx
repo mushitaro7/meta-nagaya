@@ -17,7 +17,6 @@ interface NagayaBuildingProps {
   hasShop?: boolean
   norenColor?: string
   areaLabel?: string
-  areaId?: string
 }
 
 export function NagayaBuilding({
@@ -30,7 +29,6 @@ export function NagayaBuilding({
   wallColor = '#E8D5B7',
   hasShop = false,
   norenColor = '#264653',
-  areaId = '',
 }: NagayaBuildingProps) {
   const groupRef = useRef<THREE.Group>(null)
 
@@ -478,6 +476,7 @@ export function OceanWaves() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
+          args={[positions, 3]}
           count={count}
           array={positions}
           itemSize={3}
@@ -661,7 +660,7 @@ interface AreaSignProps {
   color: string
 }
 
-export function AreaSign({ position, rotation = [0, 0, 0], label, subLabel, color }: AreaSignProps) {
+export function AreaSign({ position, rotation = [0, 0, 0], label: _label, subLabel: _subLabel, color }: AreaSignProps) {
   return (
     <group position={position} rotation={rotation}>
       {/* 柱 */}
