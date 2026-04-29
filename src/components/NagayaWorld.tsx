@@ -115,7 +115,7 @@ function CameraControls({ isExploring, isMoving }: CameraControlsProps) {
    10棟合計
    =========================== */
 interface CircularNagayaProps {
-  onBuildingClick?: (areaId: string, areaLabel: string) => void
+  onBuildingClick?: (areaId: string, areaLabel: string, buildingIndex: number) => void
 }
 
 function CircularNagaya({ onBuildingClick }: CircularNagayaProps) {
@@ -168,7 +168,7 @@ function CircularNagaya({ onBuildingClick }: CircularNagayaProps) {
             key={`nagaya-group-${i}`}
             onClick={(e) => {
               e.stopPropagation()
-              onBuildingClick?.(area.id, `${area.emoji} エリア${area.id}：${area.label}`)
+              onBuildingClick?.(area.id, `${area.emoji} エリア${area.id}：${area.label}`, i)
             }}
           >
             <NagayaBuilding {...config} />
@@ -219,7 +219,7 @@ interface NagayaWorldProps {
   selfColor?: string
   remotePlayers?: Map<string, RemotePlayer>
   onMove?: (pos: { x: number; y: number; z: number }, rotation: number) => void
-  onBuildingClick?: (areaId: string, areaLabel: string) => void
+  onBuildingClick?: (areaId: string, areaLabel: string, buildingIndex: number) => void
   onAreaEnter?: (areaId: string | null) => void
 }
 

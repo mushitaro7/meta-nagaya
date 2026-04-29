@@ -1,12 +1,16 @@
 import { useState, useCallback, useRef, Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import NagayaWorld from './components/NagayaWorld'
+import ShopModal from './components/ShopModal'
+import CartPanel, { CartFab } from './components/CartPanel'
 import { useMultiplayer } from './hooks/useMultiplayer'
+import { getShopByBuilding } from './data/shops'
+import type { CartItem } from './components/ShopModal'
+import type { Shop } from './data/shops'
 
 /* ===========================
-   メタNAGA屋 - メインアプリ (仮)
-   こども中心の経済コミュニティ空間
-   移動・マルチプレイヤー対応版
+   メタNAGA屋 - メインアプリ
+   設備強化 & 売買システム対応版
    =========================== */
 
 // ローディング画面
@@ -43,92 +47,98 @@ function SceneReady({ onReady }: { onReady: () => void }) {
 
 // エリア情報
 const AREAS = [
-  {
-    id: 'area-a',
-    areaId: 'A',
-    label: 'エリアA',
-    name: '一次産業',
-    desc: '農業・漁業・採取など\n生産の場所',
-    emoji: '🌾',
-    color: '#4A9960',
-  },
-  {
-    id: 'area-b',
-    areaId: 'B',
-    label: 'エリアB',
-    name: '二次産業',
-    desc: '加工・製造\nブランディングの場所',
-    emoji: '⚙️',
-    color: '#3B7DB5',
-  },
-  {
-    id: 'area-c',
-    areaId: 'C',
-    label: 'エリアC',
-    name: '三次産業',
-    desc: '販売・広報\nサービスの場所',
-    emoji: '🛒',
-    color: '#C05A2B',
-  },
-  {
-    id: 'area-d',
-    areaId: 'D',
-    label: 'エリアD',
-    name: 'コミュニティ',
-    desc: '交流・学び\n仲間づくりの場所',
-    emoji: '💬',
-    color: '#8B5DB5',
-  },
-  {
-    id: 'area-e',
-    areaId: 'E',
-    label: 'エリアE',
-    name: 'エンタメ',
-    desc: 'カフェ・遊び\n楽しみの場所',
-    emoji: '☕',
-    color: '#B5883B',
-  },
+  { id: 'area-a', areaId: 'A', label: 'エリアA', name: '一次産業', desc: '農業・漁業・採取など\n生産の場所', emoji: '🌾', color: '#4A9960' },
+  { id: 'area-b', areaId: 'B', label: 'エリアB', name: '二次産業', desc: '加工・製造\nブランディングの場所', emoji: '⚙️', color: '#3B7DB5' },
+  { id: 'area-c', areaId: 'C', label: 'エリアC', name: '三次産業', desc: '販売・広報\nサービスの場所', emoji: '🛒', color: '#C05A2B' },
+  { id: 'area-d', areaId: 'D', label: 'エリアD', name: 'コミュニティ', desc: '交流・学び\n仲間づくりの場所', emoji: '💬', color: '#8B5DB5' },
+  { id: 'area-e', areaId: 'E', label: 'エリアE', name: 'エンタメ', desc: 'カフェ・遊び\n楽しみの場所', emoji: '☕', color: '#B5883B' },
 ]
 
 // モバイル用 ジョイスティック UI
-interface JoystickProps {
-  onKey: (key: string, pressed: boolean) => void
-}
+interface JoystickProps { onKey: (key: string, pressed: boolean) => void }
 function MobileControls({ onKey }: JoystickProps) {
   return (
     <div id="mobile-controls" className="mobile-controls">
       <div className="joystick-row">
-        <button
-          className="jbtn"
-          onPointerDown={() => onKey('w', true)}
-          onPointerUp={() => onKey('w', false)}
-          onPointerLeave={() => onKey('w', false)}
-        >▲</button>
+        <button className="jbtn" onPointerDown={() => onKey('w', true)} onPointerUp={() => onKey('w', false)} onPointerLeave={() => onKey('w', false)}>▲</button>
       </div>
       <div className="joystick-row">
-        <button
-          className="jbtn"
-          onPointerDown={() => onKey('a', true)}
-          onPointerUp={() => onKey('a', false)}
-          onPointerLeave={() => onKey('a', false)}
-        >◀</button>
-        <button
-          className="jbtn"
-          onPointerDown={() => onKey('s', true)}
-          onPointerUp={() => onKey('s', false)}
-          onPointerLeave={() => onKey('s', false)}
-        >▼</button>
-        <button
-          className="jbtn"
-          onPointerDown={() => onKey('d', true)}
-          onPointerUp={() => onKey('d', false)}
-          onPointerLeave={() => onKey('d', false)}
-        >▶</button>
+        <button className="jbtn" onPointerDown={() => onKey('a', true)} onPointerUp={() => onKey('a', false)} onPointerLeave={() => onKey('a', false)}>◀</button>
+        <button className="jbtn" onPointerDown={() => onKey('s', true)} onPointerUp={() => onKey('s', false)} onPointerLeave={() => onKey('s', false)}>▼</button>
+        <button className="jbtn" onPointerDown={() => onKey('d', true)} onPointerUp={() => onKey('d', false)} onPointerLeave={() => onKey('d', false)}>▶</button>
       </div>
     </div>
   )
 }
 
+/* ===========================
+   決済モーダル（Stripe / PayPay 導線）
+   =========================== */
+interface CheckoutModalProps {
+  items: CartItem[]
+  total: number
+  onClose: () => void
+}
+
+function CheckoutModal({ items, total, onClose }: CheckoutModalProps) {
+  return (
+    <div className="checkout-modal-overlay" onClick={onClose}>
+      <div className="checkout-modal" onClick={e => e.stopPropagation()}>
+        <div className="checkout-modal-header">
+          <span>💳 お支払い方法</span>
+          <button className="checkout-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="checkout-modal-total">
+          合計金額: <strong>¥{total.toLocaleString()}</strong>
+        </div>
+        <div className="checkout-modal-items">
+          {items.map(item => (
+            <div key={item.product.id} className="checkout-item">
+              <span>{item.product.imageEmoji}</span>
+              <span className="checkout-item-name">{item.product.name} × {item.quantity}</span>
+              <span className="checkout-item-price">¥{(item.product.price * item.quantity).toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+        <div className="checkout-methods">
+          <a
+            className="checkout-method-btn checkout-method-stripe"
+            href="https://stripe.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            id="stripe-checkout-btn"
+          >
+            <span>💳</span>
+            <div>
+              <div className="checkout-method-name">クレジットカード決済</div>
+              <div className="checkout-method-sub">Stripe（Visa / Master / AMEX）</div>
+            </div>
+          </a>
+          <a
+            className="checkout-method-btn checkout-method-paypay"
+            href="https://paypay.ne.jp"
+            target="_blank"
+            rel="noopener noreferrer"
+            id="paypay-checkout-btn"
+          >
+            <span>🟡</span>
+            <div>
+              <div className="checkout-method-name">PayPay</div>
+              <div className="checkout-method-sub">スキャンまたはアプリで支払い</div>
+            </div>
+          </a>
+        </div>
+        <div className="checkout-coming-soon">
+          ※ 現在テスト中。決済システムは近日稼働予定です。
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ===========================
+   メインApp
+   =========================== */
 function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [loadProgress, setLoadProgress] = useState(0)
@@ -136,10 +146,18 @@ function App() {
   const [isMoving, setIsMoving] = useState(false)
   const [showLanding, setShowLanding] = useState(true)
   const [activeArea, setActiveArea] = useState<string | null>(null)
-  const [buildingPopup, setBuildingPopup] = useState<{ id: string; label: string } | null>(null)
   const [chatInput, setChatInput] = useState('')
   const [showChat, setShowChat] = useState(false)
   const [currentAreaId, setCurrentAreaId] = useState<string | null>(null)
+
+  // 店舗パネル
+  const [openShop, setOpenShop] = useState<Shop | null>(null)
+
+  // カート
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [showCart, setShowCart] = useState(false)
+  const [showCheckout, setShowCheckout] = useState(false)
+
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // マルチプレイヤー（探索中のみ有効）
@@ -165,13 +183,18 @@ function App() {
 
   const handleToggleMove = useCallback(() => {
     setIsMoving(prev => !prev)
-    setBuildingPopup(null)
+    setOpenShop(null)
   }, [])
 
-  const handleBuildingClick = useCallback((areaId: string, label: string) => {
-    if (isMoving) return  // 移動中はスキップ
-    setBuildingPopup({ id: areaId, label })
-    setTimeout(() => setBuildingPopup(null), 4000)
+  // 建物クリック → 店舗パネルを開く
+  const handleBuildingClick = useCallback((_areaId: string, _label: string, buildingIndex: number) => {
+    if (isMoving) return
+    const shop = getShopByBuilding(buildingIndex)
+    if (shop) {
+      setOpenShop(shop)
+      setActiveArea(null)
+      setShowCart(false)
+    }
   }, [isMoving])
 
   const handleAreaEnter = useCallback((areaId: string | null) => {
@@ -193,6 +216,38 @@ function App() {
     window.dispatchEvent(event)
   }, [])
 
+  // カート操作
+  const handleAddToCart = useCallback((item: CartItem) => {
+    setCartItems(prev => {
+      const existing = prev.find(i => i.product.id === item.product.id)
+      if (existing) {
+        return prev.map(i =>
+          i.product.id === item.product.id
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
+        )
+      }
+      return [...prev, item]
+    })
+  }, [])
+
+  const handleUpdateQty = useCallback((productId: string, delta: number) => {
+    setCartItems(prev =>
+      prev
+        .map(i => i.product.id === productId ? { ...i, quantity: i.quantity + delta } : i)
+        .filter(i => i.quantity > 0)
+    )
+  }, [])
+
+  const handleRemoveFromCart = useCallback((productId: string) => {
+    setCartItems(prev => prev.filter(i => i.product.id !== productId))
+  }, [])
+
+  const handleCheckout = useCallback(() => {
+    setShowCart(false)
+    setShowCheckout(true)
+  }, [])
+
   // チャット自動スクロール
   const prevMsgCount = useRef(0)
   if (chatMessages.length !== prevMsgCount.current) {
@@ -203,6 +258,9 @@ function App() {
   const currentAreaData = currentAreaId
     ? AREAS.find(a => a.areaId === currentAreaId)
     : null
+
+  const cartTotal = cartItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+  const cartCount = cartItems.reduce((sum, i) => sum + i.quantity, 0)
 
   return (
     <>
@@ -239,8 +297,6 @@ function App() {
           <p className="title-en">(仮) Meta Nagaya — Virtual Community Space</p>
           <p className="subtitle">仮想空間を介した、こども中心の<br />経済コミュニティ空間プロジェクト</p>
         </div>
-
-        {/* 5エリア紹介 */}
         <div className="area-pills">
           {AREAS.map(a => (
             <div key={a.id} className="area-pill" style={{ borderColor: a.color }}>
@@ -249,13 +305,8 @@ function App() {
             </div>
           ))}
         </div>
-
         <div className="enter-button-wrapper">
-          <button
-            className="enter-button"
-            id="enter-world-button"
-            onClick={handleEnter}
-          >
+          <button className="enter-button" id="enter-world-button" onClick={handleEnter}>
             長屋に入る
           </button>
         </div>
@@ -264,7 +315,7 @@ function App() {
       {/* 下部ヒント */}
       {showLanding && !isLoading && (
         <div className="bottom-info">
-          <span className="scroll-hint">drag to look around</span>
+          <span className="scroll-hint">drag to look around — 建物クリックでお店を見る</span>
         </div>
       )}
 
@@ -275,7 +326,6 @@ function App() {
           <span className="hud-sep"> / </span>
           メタ<span>長屋</span>
         </div>
-        {/* オンライン人数 */}
         {connected && (
           <div className="hud-online">
             <span className="hud-online-dot" />
@@ -284,10 +334,9 @@ function App() {
         )}
       </div>
 
-      {/* 操作ボタン群（探索中） */}
+      {/* 操作ボタン群 */}
       {isExploring && (
         <div className="action-buttons">
-          {/* 移動モード切り替え */}
           <button
             id="toggle-move-btn"
             className={`action-btn ${isMoving ? 'active' : ''}`}
@@ -296,12 +345,10 @@ function App() {
           >
             {isMoving ? '🔴 移動中' : '🟢 移動する'}
           </button>
-
-          {/* チャット */}
           <button
             id="toggle-chat-btn"
             className={`action-btn ${showChat ? 'active' : ''}`}
-            onClick={() => setShowChat(prev => !prev)}
+            onClick={() => { setShowChat(prev => !prev); setShowCart(false) }}
             title="チャット"
           >
             💬 チャット
@@ -313,7 +360,7 @@ function App() {
       <div className={`controls-info ${isExploring ? 'visible' : ''}`}>
         {isMoving
           ? 'W/A/S/D or ↑←↓→ : 移動　| ESCまたは「移動中」ボタン: 終了'
-          : 'マウスドラッグ: 視点回転 | スクロール: ズーム | 建物クリック: 情報表示'
+          : 'マウスドラッグ: 視点回転 | スクロール: ズーム | 🏪 建物クリック: 店を見る'
         }
       </div>
 
@@ -326,7 +373,7 @@ function App() {
               className={`feature-card ${activeArea === a.id ? 'active' : ''}`}
               id={a.id}
               style={{ '--area-color': a.color } as React.CSSProperties}
-              onClick={() => setActiveArea(activeArea === a.id ? null : a.id)}
+              onClick={() => { setActiveArea(activeArea === a.id ? null : a.id); setOpenShop(null) }}
             >
               <div className="feature-card-icon">{a.emoji}</div>
               <div className="feature-card-label-small">{a.label}</div>
@@ -337,7 +384,7 @@ function App() {
       )}
 
       {/* エリア詳細パネル */}
-      {activeArea && isExploring && !isMoving && (
+      {activeArea && isExploring && !isMoving && !openShop && (
         <div className="area-detail-panel" id="area-detail-panel">
           {(() => {
             const a = AREAS.find(x => x.id === activeArea)!
@@ -359,21 +406,9 @@ function App() {
         </div>
       )}
 
-      {/* 建物クリックポップアップ */}
-      {buildingPopup && (
-        <div className="building-popup" id="building-popup">
-          <div className="building-popup-label">{buildingPopup.label}</div>
-          <div className="building-popup-hint">クリックして詳細を見る</div>
-        </div>
-      )}
-
       {/* 移動中のエリア表示 */}
       {isMoving && currentAreaData && (
-        <div
-          className="area-enter-notice"
-          style={{ borderColor: currentAreaData.color }}
-          id="area-enter-notice"
-        >
+        <div className="area-enter-notice" style={{ borderColor: currentAreaData.color }} id="area-enter-notice">
           <span className="area-enter-emoji">{currentAreaData.emoji}</span>
           <div>
             <div className="area-enter-name">{currentAreaData.label}</div>
@@ -382,7 +417,7 @@ function App() {
         </div>
       )}
 
-      {/* モバイルコントロール（移動中のみ） */}
+      {/* モバイルコントロール */}
       {isMoving && <MobileControls onKey={handleMobileKey} />}
 
       {/* チャットパネル */}
@@ -390,11 +425,10 @@ function App() {
         <div className="chat-panel" id="chat-panel">
           <div className="chat-header">
             <span>💬 みんなのチャット</span>
-            {connected ? (
-              <span className="chat-connected">● 接続中</span>
-            ) : (
-              <span className="chat-offline">○ オフライン</span>
-            )}
+            {connected
+              ? <span className="chat-connected">● 接続中</span>
+              : <span className="chat-offline">○ オフライン</span>
+            }
           </div>
           <div className="chat-messages" id="chat-messages">
             {chatMessages.length === 0 && (
@@ -402,9 +436,7 @@ function App() {
             )}
             {chatMessages.map(msg => (
               <div key={msg.id} className="chat-msg">
-                <span className="chat-msg-name" style={{ color: msg.playerColor }}>
-                  {msg.playerName}
-                </span>
+                <span className="chat-msg-name" style={{ color: msg.playerColor }}>{msg.playerName}</span>
                 <span className="chat-msg-text">{msg.text}</span>
               </div>
             ))}
@@ -420,20 +452,16 @@ function App() {
               maxLength={80}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => {
-                e.stopPropagation()  // WASDキーを3D側に伝えない
+                e.stopPropagation()
                 if (e.key === 'Enter') handleSendChat()
               }}
             />
-            <button
-              id="chat-send-btn"
-              className="chat-send-btn"
-              onClick={handleSendChat}
-            >送信</button>
+            <button id="chat-send-btn" className="chat-send-btn" onClick={handleSendChat}>送信</button>
           </div>
         </div>
       )}
 
-      {/* プレイヤー一覧（右上） */}
+      {/* プレイヤー一覧 */}
       {isExploring && connected && remotePlayers.size > 0 && (
         <div className="player-list" id="player-list">
           <div className="player-list-title">👥 参加中</div>
@@ -450,6 +478,48 @@ function App() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* ===== 売買システム ===== */}
+
+      {/* 店舗パネル（ShopModal） */}
+      {openShop && (
+        <ShopModal
+          shop={openShop}
+          onClose={() => setOpenShop(null)}
+          onAddToCart={item => {
+            handleAddToCart(item)
+            setShowCart(true)
+          }}
+        />
+      )}
+
+      {/* カートフローティングボタン（探索中のみ） */}
+      {isExploring && !openShop && (
+        <CartFab
+          count={cartCount}
+          onClick={() => { setShowCart(prev => !prev); setOpenShop(null) }}
+        />
+      )}
+
+      {/* カートパネル */}
+      {showCart && !openShop && (
+        <CartPanel
+          items={cartItems}
+          onUpdateQty={handleUpdateQty}
+          onRemove={handleRemoveFromCart}
+          onCheckout={handleCheckout}
+          onClose={() => setShowCart(false)}
+        />
+      )}
+
+      {/* 決済モーダル */}
+      {showCheckout && (
+        <CheckoutModal
+          items={cartItems}
+          total={cartTotal}
+          onClose={() => setShowCheckout(false)}
+        />
       )}
     </>
   )
