@@ -222,27 +222,13 @@ function App() {
     }
   }, [isMoving])
 
-  // 建物クリック（移動中は無効）
+  // 建物クリック（移動モード時のみ有効）
   const handleBuildingClick = useCallback((_areaId: string, _label: string, buildingIndex: number) => {
-    if (isMovingRef.current) return
+    if (!isMovingRef.current) return  // 移動モード以外は無視
     const ownerShop = getApprovedShopByBuilding(buildingIndex)
     if (ownerShop) { setOpenShop(ownerShop); setShowCart(false); return }
     const shop = getShopByBuilding(buildingIndex)
     if (shop) { setOpenShop(shop); setShowCart(false) }
-  }, [])
-
-  // ホバー（全体図モード）
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const handleBuildingHover = useCallback((buildingIndex: number | null) => {
-    if (isMovingRef.current) return
-    if (hoverTimer.current) clearTimeout(hoverTimer.current)
-    if (buildingIndex !== null) {
-      const shop = getApprovedShopByBuilding(buildingIndex) ?? getShopByBuilding(buildingIndex)
-      if (shop) setOpenShop(shop)
-    } else {
-      // 少し待ってから閉じる（別の棟にカーソルが移る間のちらつき防止）
-      hoverTimer.current = setTimeout(() => setOpenShop(null), 400)
-    }
   }, [])
 
   const handleAreaEnter = useCallback((areaId: string | null) => {
@@ -355,7 +341,6 @@ function App() {
             remotePlayers={remotePlayers}
             onMove={handleMove}
             onBuildingClick={handleBuildingClick}
-            onBuildingHover={handleBuildingHover}
             onAreaEnter={handleAreaEnter}
             ownerBuildingIndexes={ownerBuildingIndexes}
           />
@@ -434,8 +419,8 @@ function App() {
       {/* 操作説明 */}
       <div className={`controls-info ${isExploring ? 'visible' : ''}`}>
         {isMoving
-          ? 'W/A/S/D: 移動／ ESC or 「移動中」: 終了　|　建物に近づくと店舗情報が表示'
-          : 'マウスドラッグ: 視点回転　|　建物にホバー: 店舗情報を見る'
+          ? 'W/A/S/D: 移動　|　建物に近づく・クリックで店舗を見る'
+          : 'マウスドラッグ: 視点回転　|　「移動する」ボタンで建物に入れます'
         }
       </div>
 
