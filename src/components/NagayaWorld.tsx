@@ -160,7 +160,9 @@ function OwnerShopIndicator({ position }: { position: [number, number, number] }
    =========================== */
 interface CircularNagayaProps {
   onBuildingClick?: (areaId: string, areaLabel: string, buildingIndex: number) => void
+  onBuildingHover?: (buildingIndex: number | null) => void
   ownerBuildingIndexes?: Set<number>
+  isMoving?: boolean
 }
 
 /** 16進色をブレンドするヘルパー */
@@ -178,7 +180,12 @@ function blendHex(hex1: string, hex2: string, t: number): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
-function CircularNagaya({ onBuildingClick, ownerBuildingIndexes = new Set() }: CircularNagayaProps) {
+function CircularNagaya({
+  onBuildingClick,
+  onBuildingHover,
+  ownerBuildingIndexes = new Set(),
+  isMoving = false,
+}: CircularNagayaProps) {
   const totalBuildings = 10  // 5エリア × 2棟
   const radius = BUILDING_RADIUS
 
@@ -234,6 +241,20 @@ function CircularNagaya({ onBuildingClick, ownerBuildingIndexes = new Set() }: C
             onClick={(e) => {
               e.stopPropagation()
               onBuildingClick?.(area.id, `${area.emoji} エリア${area.id}：${area.label}`, i)
+            }}
+            onPointerEnter={(e) => {
+              e.stopPropagation()
+              if (!isMoving) {
+                document.body.style.cursor = 'pointer'
+                onBuildingHover?.(i)
+              }
+            }}
+            onPointerLeave={(e) => {
+              e.stopPropagation()
+              if (!isMoving) {
+                document.body.style.cursor = 'auto'
+                onBuildingHover?.(null)
+              }
             }}
           >
             <NagayaBuilding {...config} wallColor={wallColorFinal} />
@@ -291,6 +312,7 @@ interface NagayaWorldProps {
   remotePlayers?: Map<string, RemotePlayer>
   onMove?: (pos: { x: number; y: number; z: number }, rotation: number) => void
   onBuildingClick?: (areaId: string, areaLabel: string, buildingIndex: number) => void
+  onBuildingHover?: (buildingIndex: number | null) => void
   onAreaEnter?: (areaId: string | null) => void
   ownerBuildingIndexes?: Set<number>
 }
@@ -321,6 +343,7 @@ export default function NagayaWorld({
   remotePlayers = new Map(),
   onMove,
   onBuildingClick,
+  onBuildingHover,
   onAreaEnter,
   ownerBuildingIndexes = new Set(),
 }: NagayaWorldProps) {
@@ -384,7 +407,12 @@ export default function NagayaWorld({
       <IslandGround />
 
       {/* === 5エリア長屋（円状配置） === */}
-      <CircularNagaya onBuildingClick={onBuildingClick} ownerBuildingIndexes={ownerBuildingIndexes} />
+      <CircularNagaya
+        onBuildingClick={onBuildingClick}
+        onBuildingHover={onBuildingHover}
+        ownerBuildingIndexes={ownerBuildingIndexes}
+        isMoving={isMoving}
+      />
 
       {/* === 提灯 === */}
       <CircularChouchin />

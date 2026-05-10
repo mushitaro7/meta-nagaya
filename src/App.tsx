@@ -155,13 +155,16 @@ function App() {
   const [isExploring, setIsExploring] = useState(false)
   const [isMoving, setIsMoving] = useState(false)
   const [showLanding, setShowLanding] = useState(true)
-  const [activeArea, setActiveArea] = useState<string | null>(null)
   const [chatInput, setChatInput] = useState('')
   const [showChat, setShowChat] = useState(false)
   const [currentAreaId, setCurrentAreaId] = useState<string | null>(null)
 
   // 店舗パネル
   const [openShop, setOpenShop] = useState<Shop | null>(null)
+  // 移動中の近接店舗カード
+  const [proximityShop, setProximityShop] = useState<Shop | null>(null)
+  const lastProximityBuilding = useRef<number | null>(null)
+  const isMovingRef = useRef(false)
 
   // カート
   const [cartItems, setCartItems] = useState<CartItem[]>([])
@@ -206,35 +209,73 @@ function App() {
   const handleToggleMove = useCallback(() => {
     setIsMoving(prev => !prev)
     setOpenShop(null)
+    setProximityShop(null)
+    lastProximityBuilding.current = null
   }, [])
 
-  // 建物クリック → 店舗パネルを開く
-  // 優先度: 1) 運営承認済みオーナー店舗 2) 静的サンプルデータ
-  const handleBuildingClick = useCallback((_areaId: string, _label: string, buildingIndex: number) => {
-    if (isMoving) return
-    // まずオーナー登録済み店舗を確認
-    const ownerShop = getApprovedShopByBuilding(buildingIndex)
-    if (ownerShop) {
-      setOpenShop(ownerShop)
-      setActiveArea(null)
-      setShowCart(false)
-      return
-    }
-    // フォールバック: 静的サンプルデータ
-    const shop = getShopByBuilding(buildingIndex)
-    if (shop) {
-      setOpenShop(shop)
-      setActiveArea(null)
-      setShowCart(false)
+  // isMoving変化でrefを同期
+  useEffect(() => {
+    isMovingRef.current = isMoving
+    if (!isMoving) {
+      setProximityShop(null)
+      lastProximityBuilding.current = null
     }
   }, [isMoving])
+
+  // 建物クリック（移動中は無効）
+  const handleBuildingClick = useCallback((_areaId: string, _label: string, buildingIndex: number) => {
+    if (isMovingRef.current) return
+    const ownerShop = getApprovedShopByBuilding(buildingIndex)
+    if (ownerShop) { setOpenShop(ownerShop); setShowCart(false); return }
+    const shop = getShopByBuilding(buildingIndex)
+    if (shop) { setOpenShop(shop); setShowCart(false) }
+  }, [])
+
+  // ホバー（全体図モード）
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleBuildingHover = useCallback((buildingIndex: number | null) => {
+    if (isMovingRef.current) return
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    if (buildingIndex !== null) {
+      const shop = getApprovedShopByBuilding(buildingIndex) ?? getShopByBuilding(buildingIndex)
+      if (shop) setOpenShop(shop)
+    } else {
+      // 少し待ってから閉じる（別の棟にカーソルが移る間のちらつき防止）
+      hoverTimer.current = setTimeout(() => setOpenShop(null), 400)
+    }
+  }, [])
 
   const handleAreaEnter = useCallback((areaId: string | null) => {
     setCurrentAreaId(areaId)
   }, [])
 
+  // 移動中の近接検知：棟10個との距離を毎フレーム計算
+  const BUILDING_RADIUS_WORLD = 20   // CircularNagayaのBUILDING_RADIUSと合わせる
+  const APPROACH_DIST = 7
   const handleMove = useCallback((pos: { x: number; y: number; z: number }, rotation: number) => {
     sendMove(pos, rotation)
+    if (!isMovingRef.current) return
+    let nearest: number | null = null
+    let minDist = Infinity
+    for (let i = 0; i < 10; i++) {
+      const angle = (i / 10) * Math.PI * 2
+      const bx = Math.cos(angle) * BUILDING_RADIUS_WORLD
+      const bz = Math.sin(angle) * BUILDING_RADIUS_WORLD
+      const dist = Math.sqrt((pos.x - bx) ** 2 + (pos.z - bz) ** 2)
+      if (dist < APPROACH_DIST && dist < minDist) {
+        nearest = i
+        minDist = dist
+      }
+    }
+    if (nearest !== lastProximityBuilding.current) {
+      lastProximityBuilding.current = nearest
+      if (nearest !== null) {
+        const shop = getApprovedShopByBuilding(nearest) ?? getShopByBuilding(nearest)
+        setProximityShop(shop ?? null)
+      } else {
+        setProximityShop(null)
+      }
+    }
   }, [sendMove])
 
   const handleSendChat = useCallback(() => {
@@ -314,6 +355,7 @@ function App() {
             remotePlayers={remotePlayers}
             onMove={handleMove}
             onBuildingClick={handleBuildingClick}
+            onBuildingHover={handleBuildingHover}
             onAreaEnter={handleAreaEnter}
             ownerBuildingIndexes={ownerBuildingIndexes}
           />
@@ -392,52 +434,10 @@ function App() {
       {/* 操作説明 */}
       <div className={`controls-info ${isExploring ? 'visible' : ''}`}>
         {isMoving
-          ? 'W/A/S/D or ↑←↓→ : 移動　| ESCまたは「移動中」ボタン: 終了'
-          : 'マウスドラッグ: 視点回転 | スクロール: ズーム | 🏪 建物クリック: 店を見る'
+          ? 'W/A/S/D: 移動／ ESC or 「移動中」: 終了　|　建物に近づくと店舗情報が表示'
+          : 'マウスドラッグ: 視点回転　|　建物にホバー: 店舗情報を見る'
         }
       </div>
-
-      {/* エリアパネル（探索中・通常モード） */}
-      {!isMoving && (
-        <div className={`features-overlay ${isExploring ? 'visible' : ''}`}>
-          {AREAS.map(a => (
-            <div
-              key={a.id}
-              className={`feature-card ${activeArea === a.id ? 'active' : ''}`}
-              id={a.id}
-              style={{ '--area-color': a.color } as React.CSSProperties}
-              onClick={() => { setActiveArea(activeArea === a.id ? null : a.id); setOpenShop(null) }}
-            >
-              <div className="feature-card-icon">{a.emoji}</div>
-              <div className="feature-card-label-small">{a.label}</div>
-              <div className="feature-card-label">{a.name}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* エリア詳細パネル */}
-      {activeArea && isExploring && !isMoving && !openShop && (
-        <div className="area-detail-panel" id="area-detail-panel">
-          {(() => {
-            const a = AREAS.find(x => x.id === activeArea)!
-            return (
-              <>
-                <div className="area-detail-header" style={{ borderColor: a.color }}>
-                  <span className="area-detail-emoji">{a.emoji}</span>
-                  <div>
-                    <div className="area-detail-label">{a.label}</div>
-                    <div className="area-detail-name">{a.name}</div>
-                  </div>
-                  <button className="area-detail-close" onClick={() => setActiveArea(null)}>✕</button>
-                </div>
-                <p className="area-detail-desc">{a.desc.replace('\\n', '\n')}</p>
-                <div className="area-detail-tag">こども経済コミュニティ</div>
-              </>
-            )
-          })()}
-        </div>
-      )}
 
       {/* 移動中のエリア表示 */}
       {isMoving && currentAreaData && (
@@ -553,6 +553,43 @@ function App() {
           total={cartTotal}
           onClose={() => setShowCheckout(false)}
         />
+      )}
+
+      {/* 移動中の近接店舗カード（非ブロッキング） */}
+      {isMoving && proximityShop && !openShop && (
+        <div className="proximity-shop-card" id="proximity-shop-card">
+          <button className="proximity-shop-close" onClick={() => setProximityShop(null)}>✕</button>
+          <div className="proximity-shop-header">
+            <span className="proximity-shop-emoji">{proximityShop.owner?.avatar ?? '🏪'}</span>
+            <div>
+              <div className="proximity-shop-name">{proximityShop.name}</div>
+              <div className="proximity-shop-area" style={{ color: proximityShop.areaColor }}>
+                {proximityShop.areaEmoji} {proximityShop.areaLabel}
+              </div>
+            </div>
+          </div>
+          <p className="proximity-shop-tagline">{proximityShop.tagline}</p>
+          {proximityShop.products.length > 0 && (
+            <div className="proximity-shop-products">
+              {proximityShop.products.slice(0, 3).map(p => (
+                <div key={p.id} className="proximity-product-item">
+                  <span className="proximity-product-emoji">{p.imageEmoji}</span>
+                  <span className="proximity-product-name">{p.name}</span>
+                  <span className="proximity-product-price">¥{p.price.toLocaleString()}</span>
+                </div>
+              ))}
+              {proximityShop.products.length > 3 && (
+                <div className="proximity-product-more">他 {proximityShop.products.length - 3} 点</div>
+              )}
+            </div>
+          )}
+          <button
+            className="proximity-shop-detail-btn"
+            onClick={() => { setOpenShop(proximityShop); setProximityShop(null) }}
+          >
+            詳しく見る →
+          </button>
+        </div>
       )}
     </>
   )
