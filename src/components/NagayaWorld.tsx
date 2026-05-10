@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Sky } from '@react-three/drei'
+import { OrbitControls, Sky, Billboard, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import {
   NagayaBuilding,
@@ -111,14 +111,74 @@ function CameraControls({ isExploring, isMoving }: CameraControlsProps) {
 }
 
 /* ===========================
+   オーナー店舗インジケータ（棟上に表示）
+   =========================== */
+function OwnerShopIndicator({ position }: { position: [number, number, number] }) {
+  const meshRef = useRef<THREE.Mesh>(null)
+  useFrame(({ clock }) => {
+    if (!meshRef.current) return
+    // パルスするグロー
+    const s = 1 + Math.sin(clock.elapsedTime * 2.5) * 0.18
+    meshRef.current.scale.setScalar(s)
+  })
+  return (
+    <group position={position}>
+      {/* 光るリング */}
+      <mesh ref={meshRef} position={[0, 0, 0]}>
+        <torusGeometry args={[0.6, 0.08, 8, 24]} />
+        <meshStandardMaterial
+          color="#FFD700"
+          emissive="#FFB800"
+          emissiveIntensity={1.8}
+          transparent
+          opacity={0.92}
+        />
+      </mesh>
+      {/* OPEN テキスト */}
+      <Billboard follow lockX={false} lockY={false} lockZ={false}>
+        <Text
+          position={[0, 1.1, 0]}
+          fontSize={0.38}
+          color="#FFD700"
+          outlineWidth={0.04}
+          outlineColor="#7A4A00"
+          anchorX="center"
+          anchorY="middle"
+        >
+          🏪 OPEN
+        </Text>
+      </Billboard>
+      {/* 点光 */}
+      <pointLight color="#FFD700" intensity={1.2} distance={5} decay={2} />
+    </group>
+  )
+}
+
+/* ===========================
    5エリア × 2棟ずつ円状配置
    10棟合計
    =========================== */
 interface CircularNagayaProps {
   onBuildingClick?: (areaId: string, areaLabel: string, buildingIndex: number) => void
+  ownerBuildingIndexes?: Set<number>
 }
 
-function CircularNagaya({ onBuildingClick }: CircularNagayaProps) {
+/** 16進色をブレンドするヘルパー */
+function blendHex(hex1: string, hex2: string, t: number): string {
+  const p = (h: string) => [
+    parseInt(h.slice(1, 3), 16),
+    parseInt(h.slice(3, 5), 16),
+    parseInt(h.slice(5, 7), 16),
+  ]
+  const [r1, g1, b1] = p(hex1)
+  const [r2, g2, b2] = p(hex2)
+  const r = Math.round(r1 + (r2 - r1) * t)
+  const g = Math.round(g1 + (g2 - g1) * t)
+  const b = Math.round(b1 + (b2 - b1) * t)
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+}
+
+function CircularNagaya({ onBuildingClick, ownerBuildingIndexes = new Set() }: CircularNagayaProps) {
   const totalBuildings = 10  // 5エリア × 2棟
   const radius = BUILDING_RADIUS
 
@@ -163,6 +223,11 @@ function CircularNagaya({ onBuildingClick }: CircularNagayaProps) {
     <>
       {buildingConfigs.map((config, i) => {
         const area = AREA_CONFIG[i % 5]
+        const hasOwnerShop = ownerBuildingIndexes.has(i)
+        // オーナー店舗がある棟は壁色を金色にブレンド
+        const wallColorFinal = hasOwnerShop
+          ? blendHex(config.wallColor, '#FFF5D0', 0.4)
+          : config.wallColor
         return (
           <group
             key={`nagaya-group-${i}`}
@@ -171,7 +236,7 @@ function CircularNagaya({ onBuildingClick }: CircularNagayaProps) {
               onBuildingClick?.(area.id, `${area.emoji} エリア${area.id}：${area.label}`, i)
             }}
           >
-            <NagayaBuilding {...config} />
+            <NagayaBuilding {...config} wallColor={wallColorFinal} />
             {/* クリック用の当たり判定（透明） */}
             <mesh
               position={config.position}
@@ -180,6 +245,12 @@ function CircularNagaya({ onBuildingClick }: CircularNagayaProps) {
               <boxGeometry args={[6, 6, 6]} />
               <meshBasicMaterial transparent opacity={0} />
             </mesh>
+            {/* オーナー店舗の光るインジケータ */}
+            {hasOwnerShop && (
+              <OwnerShopIndicator
+                position={[config.position[0], config.height + 2.5, config.position[2]]}
+              />
+            )}
           </group>
         )
       })}
@@ -221,6 +292,7 @@ interface NagayaWorldProps {
   onMove?: (pos: { x: number; y: number; z: number }, rotation: number) => void
   onBuildingClick?: (areaId: string, areaLabel: string, buildingIndex: number) => void
   onAreaEnter?: (areaId: string | null) => void
+  ownerBuildingIndexes?: Set<number>
 }
 
 // エリア検出（プレイヤー位置から最寄りエリアを判定）
@@ -250,6 +322,7 @@ export default function NagayaWorld({
   onMove,
   onBuildingClick,
   onAreaEnter,
+  ownerBuildingIndexes = new Set(),
 }: NagayaWorldProps) {
   const lastAreaRef = useRef<string | null>(null)
 
@@ -311,7 +384,7 @@ export default function NagayaWorld({
       <IslandGround />
 
       {/* === 5エリア長屋（円状配置） === */}
-      <CircularNagaya onBuildingClick={onBuildingClick} />
+      <CircularNagaya onBuildingClick={onBuildingClick} ownerBuildingIndexes={ownerBuildingIndexes} />
 
       {/* === 提灯 === */}
       <CircularChouchin />

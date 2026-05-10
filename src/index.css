@@ -1582,3 +1582,1191 @@ body {
   .cart-panel { right: 0.5rem; left: 0.5rem; width: auto; }
   .cart-fab { bottom: 5rem; }
 }
+
+/* ============================================================
+   オーナー管理システム スタイル
+   ============================================================ */
+
+/* --- 共通 --- */
+.owner-loading {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; font-family: var(--font-jp); font-size: 1rem;
+  color: var(--sumi); background: #f8f7f4;
+}
+
+.owner-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.4rem; padding: 0.7rem 1.6rem; border-radius: 8px;
+  font-family: var(--font-jp); font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; border: none; text-decoration: none;
+  transition: all 0.2s ease; white-space: nowrap;
+}
+.owner-btn--primary { background: #264653; color: #fff; }
+.owner-btn--primary:hover { background: #2A7F84; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(38,70,83,0.3); }
+.owner-btn--outline { background: transparent; color: #264653; border: 2px solid #264653; }
+.owner-btn--outline:hover { background: #264653; color: #fff; }
+.owner-btn--ghost { background: #f1f0ed; color: #555; }
+.owner-btn--ghost:hover { background: #e0dfdb; }
+.owner-btn--danger { background: #e74c3c; color: #fff; }
+.owner-btn--danger:hover { background: #c0392b; }
+.owner-btn--full { width: 100%; }
+.owner-btn--flex { flex: 1; }
+.owner-btn--sm { padding: 0.45rem 1rem; font-size: 0.82rem; }
+
+/* --- ポータルページ --- */
+.owner-portal {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1C2B30 0%, #264653 50%, #2A7F84 100%);
+  padding: 2rem; position: relative; overflow: hidden;
+  font-family: var(--font-jp);
+}
+.owner-portal-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.owner-portal-lantern { position: absolute; font-size: 4rem; opacity: 0.06; }
+.owner-portal-lantern:first-child { top: 10%; left: 5%; }
+.owner-portal-lantern:last-child { bottom: 10%; right: 5%; }
+.owner-portal-card {
+  background: rgba(255,255,255,0.97); border-radius: 16px;
+  padding: 3rem 2.5rem; max-width: 480px; width: 100%;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4); text-align: center;
+}
+.owner-portal-logo { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+.owner-portal-logo-emoji { font-size: 2.5rem; }
+.owner-portal-logo-title { font-size: 1.4rem; font-weight: 900; color: #264653; }
+.owner-portal-logo-sub { font-size: 0.75rem; color: #888; letter-spacing: 0.1em; }
+.owner-portal-desc { color: #555; line-height: 1.8; margin-bottom: 1.5rem; font-size: 0.92rem; }
+.owner-portal-features { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; text-align: left; }
+.owner-feature-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #f8f7f4; border-radius: 8px; }
+.owner-feature-icon { font-size: 1.5rem; flex-shrink: 0; }
+.owner-feature-title { font-weight: 700; font-size: 0.9rem; color: #264653; }
+.owner-feature-desc { font-size: 0.78rem; color: #888; margin-top: 0.1rem; }
+.owner-portal-actions { display: flex; gap: 0.75rem; flex-direction: column; margin-bottom: 1.5rem; }
+.owner-portal-back { color: #aaa; font-size: 0.82rem; text-decoration: none; display: block; }
+.owner-portal-back:hover { color: #264653; }
+
+/* --- 認証ページ（ログイン/登録） --- */
+.owner-auth-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1C2B30 0%, #264653 60%, #2A7F84 100%);
+  padding: 2rem; font-family: var(--font-jp);
+}
+.owner-auth-card {
+  background: #fff; border-radius: 16px; padding: 2.5rem 2rem;
+  width: 100%; max-width: 440px; box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+}
+.owner-auth-card--wide { max-width: 580px; }
+.owner-auth-header { text-align: center; margin-bottom: 1.5rem; }
+.owner-auth-logo { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: #888; text-decoration: none; margin-bottom: 1rem; }
+.owner-auth-title { font-size: 1.5rem; font-weight: 900; color: #264653; }
+.owner-auth-error { background: #fff3f2; border: 1px solid #f5c6c2; color: #c0392b; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; }
+.owner-auth-form { display: flex; flex-direction: column; gap: 1rem; }
+.owner-auth-footer { text-align: center; margin-top: 1.25rem; font-size: 0.84rem; color: #888; display: flex; gap: 0.5rem; justify-content: center; align-items: center; }
+.owner-auth-link { color: #264653; font-weight: 700; text-decoration: none; }
+.owner-auth-link:hover { text-decoration: underline; }
+
+/* --- ステップインジケーター --- */
+.owner-steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-top: 1.25rem; }
+.owner-step { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; position: relative; flex: 1; }
+.owner-step:not(:last-child)::after { content: ''; position: absolute; top: 14px; left: 60%; width: 80%; height: 2px; background: #e0e0e0; }
+.owner-step--done:not(:last-child)::after { background: #264653; }
+.owner-step-num { width: 28px; height: 28px; border-radius: 50%; background: #e0e0e0; color: #888; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
+.owner-step--active .owner-step-num { background: #264653; color: #fff; }
+.owner-step--done .owner-step-num { background: #27ae60; color: #fff; }
+.owner-step-label { font-size: 0.68rem; color: #aaa; }
+.owner-step--active .owner-step-label { color: #264653; font-weight: 700; }
+
+/* --- フォーム部品 --- */
+.owner-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.owner-field--flex { flex: 1; }
+.owner-field-label { font-size: 0.85rem; font-weight: 700; color: #333; }
+.owner-required { color: #e74c3c; margin-left: 0.2rem; }
+.owner-field-input, .owner-field-textarea {
+  border: 1.5px solid #ddd; border-radius: 8px; padding: 0.65rem 0.9rem;
+  font-family: var(--font-jp); font-size: 0.9rem; color: #333;
+  background: #fafafa; outline: none; width: 100%;
+  transition: border-color 0.2s ease;
+}
+.owner-field-input:focus, .owner-field-textarea:focus { border-color: #264653; background: #fff; box-shadow: 0 0 0 3px rgba(38,70,83,0.1); }
+.owner-field-textarea { resize: vertical; }
+.owner-field-count { font-size: 0.72rem; color: #aaa; text-align: right; }
+.owner-field-password-wrap { position: relative; }
+.owner-field-password-wrap .owner-field-input { padding-right: 2.5rem; }
+.owner-field-eye { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0; }
+.owner-field-row { display: flex; gap: 1rem; }
+.owner-field--sns { display: flex; align-items: center; gap: 0.5rem; }
+.owner-sns-prefix { font-size: 1.1rem; flex-shrink: 0; width: 24px; text-align: center; }
+.owner-sns-group { display: flex; flex-direction: column; gap: 0.6rem; }
+.owner-sns-title { font-size: 0.85rem; font-weight: 700; color: #333; margin-bottom: 0.25rem; }
+
+/* --- エリア選択グリッド --- */
+.owner-area-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.6rem; }
+.owner-area-grid--small { grid-template-columns: repeat(5, 1fr); }
+.owner-area-card {
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  padding: 0.75rem 0.5rem; border: 2px solid #ddd; border-radius: 10px;
+  background: #f8f7f4; cursor: pointer; transition: all 0.2s ease;
+  font-family: var(--font-jp);
+}
+.owner-area-card:hover { border-color: #264653; background: #f0eeea; }
+.owner-area-card--selected { border-color: #264653; box-shadow: 0 0 0 2px rgba(38,70,83,0.2); }
+.owner-area-emoji { font-size: 1.4rem; }
+.owner-area-label { font-size: 0.72rem; font-weight: 700; color: #333; }
+.owner-area-desc { font-size: 0.65rem; color: #888; text-align: center; display: none; }
+
+/* --- アバター選択 --- */
+.owner-avatar-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.owner-avatar-btn { font-size: 1.5rem; width: 44px; height: 44px; border: 2px solid transparent; border-radius: 8px; cursor: pointer; background: #f8f7f4; transition: all 0.15s ease; }
+.owner-avatar-btn:hover { background: #e8e6e0; }
+.owner-avatar-btn--selected { border-color: #264653; background: rgba(38,70,83,0.1); }
+
+/* --- フォームアクション --- */
+.owner-form-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem; padding-top: 1.25rem; border-top: 1px solid #eee; }
+
+/* ===== ダッシュボード レイアウト ===== */
+.owner-dashboard { display: flex; min-height: 100vh; background: #f5f4f0; font-family: var(--font-jp); }
+
+/* --- サイドバー --- */
+.owner-sidebar {
+  width: 240px; flex-shrink: 0; background: #264653; display: flex;
+  flex-direction: column; padding: 1.5rem 1rem;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.owner-sidebar-logo { display: flex; align-items: center; gap: 0.6rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.5rem; font-size: 1.4rem; }
+.owner-sidebar-title { font-size: 0.95rem; font-weight: 900; color: #fff; }
+.owner-sidebar-sub { font-size: 0.65rem; color: rgba(255,255,255,0.5); }
+.owner-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+.owner-nav-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 0.9rem; border-radius: 8px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.88rem; transition: all 0.2s ease; }
+.owner-nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.owner-nav-item--active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 700; }
+.owner-sidebar-account { display: flex; align-items: center; gap: 0.6rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+.owner-sidebar-avatar { font-size: 1.8rem; }
+.owner-sidebar-name { font-size: 0.82rem; font-weight: 700; color: #fff; }
+.owner-sidebar-email { font-size: 0.68rem; color: rgba(255,255,255,0.5); word-break: break-all; }
+.owner-logout-btn { margin-left: auto; background: none; border: none; cursor: pointer; font-size: 1.2rem; opacity: 0.6; transition: opacity 0.2s; }
+.owner-logout-btn:hover { opacity: 1; }
+
+/* --- メイン --- */
+.owner-main { flex: 1; padding: 2rem; overflow-y: auto; max-width: calc(100vw - 240px); }
+.owner-page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
+.owner-page-title { font-size: 1.6rem; font-weight: 900; color: #1C2B30; }
+.owner-page-subtitle { font-size: 0.85rem; color: #888; margin-top: 0.2rem; }
+
+/* --- サマリーカード --- */
+.owner-summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.owner-summary-card { background: #fff; border-radius: 12px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 3px solid #264653; }
+.owner-summary-card--green { border-top-color: #27ae60; }
+.owner-summary-card--red { border-top-color: #e74c3c; }
+.owner-summary-card--purple { border-top-color: #8B5DB5; }
+.owner-summary-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+.owner-summary-num { font-size: 1.5rem; font-weight: 900; color: #1C2B30; }
+.owner-summary-label { font-size: 0.75rem; color: #888; margin-top: 0.2rem; }
+
+/* --- セクション --- */
+.owner-section { background: #fff; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.owner-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.owner-section-title { font-size: 1rem; font-weight: 800; color: #1C2B30; }
+.owner-edit-link { font-size: 0.82rem; color: #264653; text-decoration: none; font-weight: 700; }
+.owner-edit-link:hover { text-decoration: underline; }
+
+/* --- 店舗プレビュー --- */
+.owner-shop-preview { display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8f7f4; border-radius: 10px; }
+.owner-shop-preview-left { display: flex; align-items: center; gap: 1rem; }
+.owner-shop-preview-emoji { font-size: 2rem; }
+.owner-shop-preview-name { font-size: 1rem; font-weight: 800; color: #1C2B30; }
+.owner-shop-preview-tagline { font-size: 0.82rem; color: #666; }
+.owner-shop-preview-area { font-size: 0.75rem; font-weight: 700; margin-top: 0.2rem; }
+.owner-status-badge { padding: 0.35rem 0.9rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+.owner-status-badge--open { background: #d4edda; color: #27ae60; }
+.owner-status-badge--closed { background: #f8d7da; color: #c0392b; }
+
+/* --- 商品リスト --- */
+.owner-product-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.owner-product-row { display: flex; align-items: center; gap: 1rem; padding: 0.9rem; background: #f8f7f4; border-radius: 10px; }
+.owner-product-img { width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+.owner-product-info { flex: 1; min-width: 0; }
+.owner-product-name { font-size: 0.9rem; font-weight: 700; color: #1C2B30; }
+.owner-product-cat { font-size: 0.72rem; color: #888; }
+.owner-product-price { font-size: 0.85rem; font-weight: 700; color: #264653; }
+.owner-product-stock { flex-shrink: 0; }
+.owner-stock-badge { padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+.owner-stock-badge--ok { background: #d4edda; color: #27ae60; }
+.owner-stock-badge--low { background: #fff3cd; color: #d68910; }
+.owner-stock-badge--zero { background: #f8d7da; color: #c0392b; }
+.owner-product-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+.owner-action-btn { background: #eee; border: none; border-radius: 6px; width: 32px; height: 32px; cursor: pointer; font-size: 0.9rem; transition: all 0.15s; }
+.owner-action-btn:hover { background: #ddd; }
+.owner-action-btn--delete:hover { background: #fde8e8; }
+
+/* --- トグル --- */
+.owner-toggle-btn { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.65rem 1.25rem; border-radius: 10px; border: 2px solid; font-family: var(--font-jp); cursor: pointer; font-weight: 700; transition: all 0.2s; }
+.owner-toggle-btn--open { background: #d4edda; color: #27ae60; border-color: #27ae60; }
+.owner-toggle-btn--closed { background: #f8d7da; color: #c0392b; border-color: #c0392b; }
+.owner-toggle-hint { font-size: 0.65rem; font-weight: 400; opacity: 0.7; }
+.owner-toggle-row { display: flex; gap: 0.6rem; }
+.owner-toggle-chip { padding: 0.5rem 1.2rem; border-radius: 999px; border: 2px solid #ddd; background: #f8f7f4; cursor: pointer; font-family: var(--font-jp); font-size: 0.85rem; font-weight: 600; transition: all 0.15s; color: #888; }
+.owner-toggle-chip--on { background: #d4edda; border-color: #27ae60; color: #27ae60; }
+.owner-toggle-chip--off { background: #f8d7da; border-color: #c0392b; color: #c0392b; }
+
+/* --- セーブトースト --- */
+.owner-save-toast { background: #264653; color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.88rem; animation: fadeInDown 0.3s ease; }
+
+/* --- 空の状態 --- */
+.owner-empty-state { text-align: center; padding: 4rem 2rem; background: #fff; border-radius: 12px; }
+.owner-empty-products { text-align: center; padding: 2rem; }
+.owner-empty-emoji { font-size: 3rem; margin-bottom: 0.75rem; }
+.owner-empty-title { font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 0.5rem; }
+.owner-empty-desc { font-size: 0.85rem; color: #888; margin-bottom: 1.25rem; }
+
+/* --- 削除確認モーダル --- */
+.owner-confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.owner-confirm-modal { background: #fff; border-radius: 16px; padding: 2rem; max-width: 360px; width: 90%; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.4); }
+.owner-confirm-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.owner-confirm-title { font-size: 1.1rem; font-weight: 800; color: #1C2B30; margin-bottom: 0.4rem; }
+.owner-confirm-desc { font-size: 0.85rem; color: #888; margin-bottom: 1.5rem; }
+.owner-confirm-actions { display: flex; gap: 0.75rem; justify-content: center; }
+
+/* --- エディターフォーム --- */
+.owner-editor-form { display: flex; flex-direction: column; gap: 1.25rem; }
+.owner-editor-section { background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.owner-editor-section-title { font-size: 0.95rem; font-weight: 800; color: #1C2B30; margin-bottom: 1.25rem; padding-bottom: 0.6rem; border-bottom: 2px solid #f0eeea; }
+
+/* --- 商品プレビュー --- */
+.owner-product-preview { display: flex; gap: 1rem; padding: 1rem; background: #f8f7f4; border-radius: 10px; }
+.owner-product-preview-img { width: 80px; height: 80px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.owner-product-preview-emoji { font-size: 2.5rem; }
+.owner-product-preview-info { flex: 1; }
+.owner-product-preview-cat { font-size: 0.72rem; color: #888; }
+.owner-product-preview-name { font-size: 1rem; font-weight: 800; color: #1C2B30; margin: 0.15rem 0; }
+.owner-product-preview-desc { font-size: 0.8rem; color: #666; margin-bottom: 0.4rem; }
+.owner-product-preview-price { font-size: 1.1rem; font-weight: 800; color: #264653; }
+
+/* --- 絵文字・カラーグリッド --- */
+.owner-emoji-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.owner-emoji-btn { font-size: 1.4rem; width: 42px; height: 42px; border: 2px solid transparent; border-radius: 8px; cursor: pointer; background: #f8f7f4; transition: all 0.15s; }
+.owner-emoji-btn:hover { background: #e8e6e0; }
+.owner-emoji-btn--selected { border-color: #264653; background: rgba(38,70,83,0.1); }
+.owner-color-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.owner-color-btn { width: 32px; height: 32px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: transform 0.15s; }
+.owner-color-btn:hover { transform: scale(1.15); }
+.owner-color-btn--selected { border-color: #264653; transform: scale(1.15); box-shadow: 0 0 0 2px #fff, 0 0 0 4px #264653; }
+
+/* --- セレクト --- */
+select.owner-field-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2.5rem; cursor: pointer; }
+
+/* レスポンシブ */
+@media (max-width: 900px) {
+  .owner-sidebar { width: 200px; }
+  .owner-main { max-width: calc(100vw - 200px); }
+  .owner-summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .owner-area-grid { grid-template-columns: repeat(3, 1fr); }
+  .owner-field-row { flex-direction: column; }
+}
+@media (max-width: 640px) {
+  .owner-sidebar { display: none; }
+  .owner-main { max-width: 100vw; padding: 1rem; }
+  .owner-area-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============================================================
+   運営管理パネル スタイル
+   ============================================================ */
+
+/* --- 管理者ログインページ --- */
+.admin-login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f1923 0%, #1a2d3d 40%, #0d2136 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  font-family: var(--font-jp);
+}
+
+.admin-login-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+}
+
+.admin-login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.admin-login-icon {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-login-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+
+.admin-login-sub {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+  font-family: var(--font-en);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.admin-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.admin-login-btn {
+  width: 100%;
+  padding: 0.9rem;
+  background: linear-gradient(135deg, #2A7F84, #4DAAB0);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: var(--font-jp);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.admin-login-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(42,127,132,0.5);
+}
+
+.admin-login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-login-note {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.7;
+}
+
+.admin-login-note code {
+  background: rgba(255,255,255,0.1);
+  padding: 0.15em 0.5em;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #D4A843;
+}
+
+.admin-back-link {
+  display: block;
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.35);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.admin-back-link:hover {
+  color: rgba(255,255,255,0.7);
+}
+
+/* --- 管理パネル レイアウト --- */
+.admin-panel-page {
+  display: flex;
+  min-height: 100vh;
+  background: #f0f2f5;
+  font-family: var(--font-jp);
+}
+
+/* --- サイドバー --- */
+.admin-sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #1a2d3d 0%, #0f1923 100%);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.admin-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.admin-sidebar-logo {
+  font-size: 1.8rem;
+}
+
+.admin-sidebar-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.admin-sidebar-sub {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.35);
+  font-family: var(--font-en);
+}
+
+.admin-nav {
+  flex: 1;
+  padding: 1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  font-family: var(--font-jp);
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.6);
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.admin-nav-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.9);
+}
+
+.admin-nav-item.active {
+  background: rgba(42,127,132,0.25);
+  color: #4DAAB0;
+}
+
+.admin-nav-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.admin-nav-badge {
+  margin-left: auto;
+  background: #E74C3C;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.1em 0.5em;
+  min-width: 20px;
+  text-align: center;
+}
+
+.admin-nav-badge-green {
+  background: #27AE60;
+}
+
+.admin-sidebar-footer {
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-logout {
+  color: rgba(231,76,60,0.7) !important;
+}
+
+.admin-logout:hover {
+  color: #E74C3C !important;
+  background: rgba(231,76,60,0.1) !important;
+}
+
+/* --- メインコンテンツ --- */
+.admin-main {
+  flex: 1;
+  padding: 2rem;
+  max-width: calc(100vw - 240px);
+  overflow-x: hidden;
+}
+
+.admin-section-header {
+  margin-bottom: 1.5rem;
+}
+
+.admin-section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2d3d;
+}
+
+.admin-section-sub {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 0.2rem;
+}
+
+/* --- アラート --- */
+.admin-alert {
+  padding: 0.9rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid;
+}
+
+.admin-alert-warning {
+  background: #FFF9E6;
+  border-color: #D4A843;
+  color: #7a5a10;
+}
+
+/* --- フォーム共通 --- */
+.admin-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.admin-form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.admin-form-input {
+  padding: 0.6rem 0.9rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-family: var(--font-jp);
+  font-size: 0.9rem;
+  color: #333;
+  background: #fff;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.admin-form-input:focus {
+  border-color: #2A7F84;
+  box-shadow: 0 0 0 3px rgba(42,127,132,0.12);
+}
+
+.admin-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.required {
+  color: #E74C3C;
+  font-size: 0.78rem;
+}
+
+.optional {
+  color: #aaa;
+  font-size: 0.78rem;
+}
+
+/* --- ボタン --- */
+.admin-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  font-family: var(--font-jp);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.admin-btn-primary {
+  background: linear-gradient(135deg, #2A7F84, #4DAAB0);
+  color: #fff;
+}
+
+.admin-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(42,127,132,0.4);
+}
+
+.admin-btn-secondary {
+  background: #eee;
+  color: #555;
+}
+
+.admin-btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.admin-btn-approve {
+  background: linear-gradient(135deg, #27AE60, #2ECC71);
+  color: #fff;
+}
+
+.admin-btn-approve:hover {
+  box-shadow: 0 4px 12px rgba(39,174,96,0.4);
+}
+
+.admin-btn-suspend {
+  background: linear-gradient(135deg, #C0392B, #E74C3C);
+  color: #fff;
+}
+
+.admin-btn-suspend:hover {
+  box-shadow: 0 4px 12px rgba(192,57,43,0.4);
+}
+
+/* --- エラー・成功メッセージ --- */
+.admin-error-msg {
+  color: #E74C3C;
+  font-size: 0.85rem;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+}
+
+.admin-success-msg {
+  color: #27AE60;
+  font-size: 0.85rem;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+}
+
+/* --- 空状態 --- */
+.admin-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #aaa;
+  background: #fff;
+  border-radius: 12px;
+  border: 2px dashed #e5e7eb;
+}
+
+.admin-empty-sub {
+  font-size: 0.85rem;
+  margin: 0.5rem 0 1.5rem;
+}
+
+/* --- ステータスバッジ --- */
+.admin-badge {
+  display: inline-block;
+  padding: 0.25em 0.7em;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-invited {
+  background: #EAF6EC;
+  color: #27AE60;
+  border: 1px solid #86efac;
+}
+
+.badge-pending {
+  background: #FFF8E1;
+  color: #D4A843;
+  border: 1px solid #FDE68A;
+}
+
+.badge-approved {
+  background: #E8F4FD;
+  color: #2980B9;
+  border: 1px solid #93C5FD;
+}
+
+.badge-suspended {
+  background: #FEF2F2;
+  color: #E74C3C;
+  border: 1px solid #FCA5A5;
+}
+
+/* --- 出店者カード --- */
+.admin-owner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-owner-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid #e5e7eb;
+  transition: box-shadow 0.15s;
+}
+
+.admin-owner-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.admin-owner-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-owner-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2A7F84, #4DAAB0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-owner-info {
+  flex: 1;
+}
+
+.admin-owner-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2d3d;
+}
+
+.admin-owner-email {
+  font-size: 0.82rem;
+  color: #666;
+  margin: 0.1rem 0;
+}
+
+.admin-owner-date {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.admin-owner-shop {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.admin-owner-shop-icon {
+  font-size: 1.3rem;
+}
+
+.admin-owner-shop-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-owner-shop-meta {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.admin-owner-note {
+  font-size: 0.8rem;
+  color: #666;
+  background: #f5f5f5;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.admin-owner-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* --- 招待コード発行フォーム --- */
+.invite-issue-form {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid #e5e7eb;
+}
+
+.invite-issue-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2d3d;
+  margin-bottom: 1.25rem;
+}
+
+/* --- 発行成功バナー --- */
+.invite-success-banner {
+  background: linear-gradient(135deg, #EAF6EC, #f0fdf4);
+  border: 2px solid #86efac;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.invite-success-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #27AE60;
+  margin-bottom: 0.5rem;
+}
+
+.invite-success-code {
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-family: monospace;
+  letter-spacing: 0.15em;
+  color: #1a2d3d;
+  background: rgba(255,255,255,0.7);
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  display: inline-block;
+  margin: 0.75rem 0;
+}
+
+.invite-success-note {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.invite-success-url {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background: rgba(0,0,0,0.06);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  color: #333;
+  word-break: break-all;
+  margin-bottom: 1rem;
+}
+
+.invite-success-banner .admin-btn {
+  margin: 0 0.25rem;
+}
+
+/* --- 招待コード一覧 --- */
+.invite-list-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #555;
+  margin-bottom: 0.75rem;
+}
+
+.invite-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.invite-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e5e7eb;
+}
+
+.invite-card-inactive {
+  opacity: 0.55;
+}
+
+.invite-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.invite-code-text {
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #1a2d3d;
+}
+
+.invite-card-badges {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.invite-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.78rem;
+  color: #888;
+  margin-bottom: 0.75rem;
+}
+
+.invite-card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.invite-action-btn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  border: none;
+  font-family: var(--font-jp);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.invite-btn-copy {
+  background: #e8f4fd;
+  color: #2980B9;
+}
+
+.invite-btn-copy:hover {
+  background: #d1eaf9;
+}
+
+.invite-btn-revoke {
+  background: #fef2f2;
+  color: #E74C3C;
+}
+
+.invite-btn-revoke:hover {
+  background: #fde8e8;
+}
+
+/* --- 設定 --- */
+.admin-settings-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e5e7eb;
+  max-width: 500px;
+}
+
+.admin-settings-card .admin-form-group {
+  margin-bottom: 1rem;
+}
+
+.admin-settings-subtitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2d3d;
+  margin-bottom: 1.25rem;
+}
+
+.admin-info-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.875rem;
+}
+
+.admin-info-row:last-child {
+  border-bottom: none;
+}
+
+.admin-info-row span:first-child {
+  color: #666;
+}
+
+.admin-info-row span:last-child {
+  font-weight: 600;
+  color: #333;
+}
+
+/* --- 承認確認モーダル --- */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+
+.admin-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+  overflow: hidden;
+  animation: fadeInUp 0.2s ease;
+}
+
+.admin-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a2d3d;
+}
+
+.admin-modal-body {
+  padding: 1.5rem;
+}
+
+.admin-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* --- レスポンシブ --- */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    display: none;
+  }
+  .admin-main {
+    max-width: 100vw;
+    padding: 1rem;
+  }
+  .admin-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ============================================================
+   棟配置管理タブ
+   ============================================================ */
+
+.building-map {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+}
+
+.building-map-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.building-map-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 700px) {
+  .building-map-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.building-map-cell {
+  border: 2px solid;
+  border-radius: 10px;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  transition: box-shadow 0.15s;
+}
+
+.building-map-cell.assigned {
+  background: linear-gradient(135deg, #fffdf5, #fef9e7);
+  box-shadow: 0 2px 8px rgba(212,168,67,0.18);
+}
+
+.building-map-cell.empty {
+  background: #f8f9fa;
+  opacity: 0.6;
+}
+
+.building-map-index {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #aaa;
+  margin-bottom: 0.2rem;
+}
+
+.building-map-area {
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.building-map-shop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.building-map-shopname {
+  font-size: 0.65rem;
+  color: #555;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.building-map-empty {
+  font-size: 0.72rem;
+  color: #bbb;
+}
+
+.admin-building-assign {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.admin-building-assign .admin-form-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.admin-building-assign .admin-form-input {
+  flex: 1;
+}

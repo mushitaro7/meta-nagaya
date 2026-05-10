@@ -1,12 +1,22 @@
-import { useState, useCallback, useRef, Suspense } from 'react'
+import { useState, useCallback, useRef, useEffect, Suspense } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Canvas } from '@react-three/fiber'
 import NagayaWorld from './components/NagayaWorld'
 import ShopModal from './components/ShopModal'
 import CartPanel, { CartFab } from './components/CartPanel'
 import { useMultiplayer } from './hooks/useMultiplayer'
 import { getShopByBuilding } from './data/shops'
+import { getApprovedShopByBuilding, getAssignedBuildingIndexes } from './data/ownerStore'
 import type { CartItem } from './components/ShopModal'
 import type { Shop } from './data/shops'
+import OwnerPortal from './pages/OwnerPortal'
+import OwnerLogin from './pages/OwnerLogin'
+import OwnerRegister from './pages/OwnerRegister'
+import OwnerDashboard from './pages/OwnerDashboard'
+import ShopEditor from './pages/ShopEditor'
+import ProductEditor from './pages/ProductEditor'
+import AdminLogin from './pages/AdminLogin'
+import AdminPanel from './pages/AdminPanel'
 
 /* ===========================
    メタNAGA屋 - メインアプリ
@@ -158,6 +168,9 @@ function App() {
   const [showCart, setShowCart] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
 
+  // オーナー棟インデックス（リアルタイム更新）
+  const [ownerBuildingIndexes, setOwnerBuildingIndexes] = useState<Set<number>>(() => getAssignedBuildingIndexes())
+
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // マルチプレイヤー（探索中のみ有効）
@@ -176,6 +189,15 @@ function App() {
     }, 100)
   }, [])
 
+  // ownerStore の変更を監視してリアルタイム反映
+  useEffect(() => {
+    const onStorage = () => setOwnerBuildingIndexes(getAssignedBuildingIndexes())
+    window.addEventListener('storage', onStorage)
+    // 初回マウント時にも取得
+    setOwnerBuildingIndexes(getAssignedBuildingIndexes())
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
   const handleEnter = useCallback(() => {
     setShowLanding(false)
     setIsExploring(true)
@@ -187,8 +209,18 @@ function App() {
   }, [])
 
   // 建物クリック → 店舗パネルを開く
+  // 優先度: 1) 運営承認済みオーナー店舗 2) 静的サンプルデータ
   const handleBuildingClick = useCallback((_areaId: string, _label: string, buildingIndex: number) => {
     if (isMoving) return
+    // まずオーナー登録済み店舗を確認
+    const ownerShop = getApprovedShopByBuilding(buildingIndex)
+    if (ownerShop) {
+      setOpenShop(ownerShop)
+      setActiveArea(null)
+      setShowCart(false)
+      return
+    }
+    // フォールバック: 静的サンプルデータ
     const shop = getShopByBuilding(buildingIndex)
     if (shop) {
       setOpenShop(shop)
@@ -283,6 +315,7 @@ function App() {
             onMove={handleMove}
             onBuildingClick={handleBuildingClick}
             onAreaEnter={handleAreaEnter}
+            ownerBuildingIndexes={ownerBuildingIndexes}
           />
           <SceneLoader onLoaded={handleLoaded} />
         </Canvas>
@@ -525,4 +558,29 @@ function App() {
   )
 }
 
-export default App
+/* ===========================
+   ルーター統合ラッパー
+   =========================== */
+function AppRouter() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* 運営管理者パネル */}
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/admin/panel" element={<AdminPanel />} />
+        {/* オーナーポータル系 */}
+        <Route path="/owner" element={<OwnerPortal />} />
+        <Route path="/owner/login" element={<OwnerLogin />} />
+        <Route path="/owner/register" element={<OwnerRegister />} />
+        <Route path="/owner/dashboard" element={<OwnerDashboard />} />
+        <Route path="/owner/shop/edit" element={<ShopEditor />} />
+        <Route path="/owner/products/new" element={<ProductEditor />} />
+        <Route path="/owner/products/edit/:id" element={<ProductEditor />} />
+        {/* メインワールド */}
+        <Route path="/*" element={<App />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
+
+export default AppRouter
