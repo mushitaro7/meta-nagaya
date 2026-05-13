@@ -1,56 +1,80 @@
 /**
- * メタNAGA屋 マルチプレイヤーサーバー
+ * メタNAGA屋 マルチプレイヤーサーバー（強化版）
  * Socket.io によるリアルタイム位置同期
- * Railway / Render 対応版
+ * Railway / Render / Fly.io 対応版
  */
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 
-const httpServer = createServer()
+const httpServer = createServer((req, res) => {
+  // ヘルスチェック用エンドポイント
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({
+      status: 'ok',
+      players: players.size,
+      uptime: Math.floor(process.uptime()),
+      version: '2.0.0',
+    }))
+    return
+  }
+  res.writeHead(404)
+  res.end()
+})
 
-// 許可するオリジン（環境変数で本番URLを追加できる）
+// 許可するオリジン
 const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  process.env.VITE_CLIENT_URL,  // Vercelなどの本番URL
+  'https://meta-nagaya.vercel.app',
+  process.env.VITE_CLIENT_URL,
+  process.env.CLIENT_URL,
 ].filter(Boolean)
+
+console.log('[起動] 許可オリジン:', allowedOrigins)
 
 const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
+  // 接続品質設定
+  pingTimeout: 20000,
+  pingInterval: 15000,
 })
 
 // プレイヤー管理
 const players = new Map()
 
-// アバター名リスト（日本語・和風）
+// アバター名リスト（和風）
 const AVATAR_NAMES = [
   'さくら', 'はな', 'ゆき', 'あおい', 'みおん',
   'けんた', 'りょう', 'たける', 'ひなた', 'そうた',
   'もみこ', 'なでしこ', 'あずさ', 'ちはる', 'いろは',
+  'ひびき', 'かえで', 'もみじ', 'すずな', 'きりこ',
 ]
 
-// アバターカラーリスト
+// アバターカラーリスト（鮮やかな和風カラー）
 const AVATAR_COLORS = [
   '#FF6B9D', '#FF9F43', '#54A0FF', '#5F27CD', '#00D2D3',
-  '#1DD1A1', '#C8D6E5', '#FF9FF3', '#FECA57', '#48DBFB',
+  '#1DD1A1', '#FF9FF3', '#FECA57', '#48DBFB', '#A29BFE',
+  '#FD79A8', '#6C5CE7', '#00CEC9', '#E17055', '#74B9FF',
 ]
 
 let playerCount = 0
 
 io.on('connection', (socket) => {
   playerCount++
-  const nameIdx = playerCount % AVATAR_NAMES.length
-  const colorIdx = playerCount % AVATAR_COLORS.length
+  const nameIdx = (playerCount - 1) % AVATAR_NAMES.length
+  const colorIdx = (playerCount - 1) % AVATAR_COLORS.length
 
   const playerData = {
     id: socket.id,
     name: AVATAR_NAMES[nameIdx],
     color: AVATAR_COLORS[colorIdx],
-    position: { x: 0, y: 0, z: 26 },  // 橋の入口付近からスタート
-    rotation: 0,
+    position: { x: 0, y: 0, z: 22 },  // 橋の内側からスタート
+    rotation: Math.PI,                  // 島の内側を向く
     area: null,
     joinedAt: Date.now(),
   }
@@ -68,16 +92,21 @@ io.on('connection', (socket) => {
   // 他の全員に新規参加を通知
   socket.broadcast.emit('player:join', playerData)
 
-  // 位置更新
+  // 位置更新（スロットリングはクライアント側で制御済み）
   socket.on('player:move', (data) => {
     const player = players.get(socket.id)
     if (!player) return
 
-    player.position = data.position
-    player.rotation = data.rotation
+    // 境界チェック（サーバーサイドバリデーション）
+    if (data.position && typeof data.position.x === 'number') {
+      const dist = Math.sqrt(data.position.x ** 2 + data.position.z ** 2)
+      if (dist <= 30) {  // 島の最大半径より少し広め
+        player.position = data.position
+      }
+    }
+    player.rotation = typeof data.rotation === 'number' ? data.rotation : player.rotation
     player.area = data.area ?? null
 
-    // 他の全員に位置を送信（送信者除く）
     socket.broadcast.emit('player:move', {
       id: socket.id,
       position: player.position,
@@ -91,12 +120,15 @@ io.on('connection', (socket) => {
     const player = players.get(socket.id)
     if (!player) return
 
+    const text = String(data.text ?? '').trim().slice(0, 80)
+    if (!text) return
+
     const msg = {
       id: `${socket.id}-${Date.now()}`,
       playerId: socket.id,
       playerName: player.name,
       playerColor: player.color,
-      text: String(data.text).slice(0, 80),
+      text,
       timestamp: Date.now(),
     }
 
@@ -112,11 +144,16 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('player:area', { id: socket.id, area: areaId })
   })
 
+  // ping/pong（接続品質計測）
+  socket.on('ping', () => {
+    socket.emit('pong')
+  })
+
   // 切断
-  socket.on('disconnect', () => {
+  socket.on('disconnect', (reason) => {
     const player = players.get(socket.id)
     if (player) {
-      console.log(`[切断] ${player.name} | 残り: ${players.size - 1}人`)
+      console.log(`[切断] ${player.name} (${reason}) | 残り: ${players.size - 1}人`)
     }
     players.delete(socket.id)
     io.emit('player:leave', socket.id)
@@ -126,7 +163,8 @@ io.on('connection', (socket) => {
 // Railway/Render は PORT 環境変数を自動で渡す
 const PORT = process.env.PORT ?? 3001
 httpServer.listen(PORT, () => {
-  console.log(`\n🏮 メタNAGA屋 マルチプレイヤーサーバー起動`)
-  console.log(`   http://localhost:${PORT}`)
+  console.log(`\n🏮 メタNAGA屋 マルチプレイヤーサーバー v2.0 起動`)
+  console.log(`   ポート: ${PORT}`)
+  console.log(`   ヘルスチェック: http://localhost:${PORT}/health`)
   console.log(`   待機中...\n`)
 })

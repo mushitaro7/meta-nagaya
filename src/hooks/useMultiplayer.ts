@@ -1,6 +1,8 @@
 /**
- * マルチプレイヤー Socket.io フック
- * サーバーへの接続・位置送信・他プレイヤー受信
+ * マルチプレイヤー Socket.io フック（強化版）
+ * - サーバーへの接続・位置送信・他プレイヤー受信
+ * - チャットメッセージをプレイヤーに紐付け（吹き出し用）
+ * - ping/pong による接続品質監視
  */
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { io, Socket } from 'socket.io-client'
@@ -12,6 +14,8 @@ export interface RemotePlayer {
   position: { x: number; y: number; z: number }
   rotation: number
   area: string | null
+  lastChat?: string   // 最新チャットテキスト（吹き出し用）
+  lastChatAt?: number // タイムスタンプ
 }
 
 export interface SelfPlayer {
@@ -39,7 +43,10 @@ export function useMultiplayer(enabled: boolean) {
   const [remotePlayers, setRemotePlayers] = useState<Map<string, RemotePlayer>>(new Map())
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [connected, setConnected] = useState(false)
+  const [ping, setPing] = useState<number | null>(null)
   const lastSendTime = useRef(0)
+  const pingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pingSentAt = useRef<number>(0)
 
   useEffect(() => {
     if (!enabled) return
@@ -47,7 +54,8 @@ export function useMultiplayer(enabled: boolean) {
     const socket = io(SERVER_URL, {
       transports: ['websocket'],
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
     })
     socketRef.current = socket
 
@@ -58,7 +66,12 @@ export function useMultiplayer(enabled: boolean) {
 
     socket.on('disconnect', () => {
       setConnected(false)
+      setPing(null)
       console.log('[MP] 切断')
+    })
+
+    socket.on('connect_error', (err) => {
+      console.warn('[MP] 接続エラー:', err.message)
     })
 
     // 初期化（自分の情報＋既存プレイヤー）
@@ -98,13 +111,33 @@ export function useMultiplayer(enabled: boolean) {
       })
     })
 
-    // チャット受信
+    // チャット受信（プレイヤーに吹き出し情報も紐付け）
     socket.on('chat:message', (msg: ChatMessage) => {
       setChatMessages(prev => [...prev.slice(-49), msg])  // 最大50件
+
+      // 送信者のアバターに lastChat をセット（吹き出し表示用）
+      setRemotePlayers(prev => {
+        const player = prev.get(msg.playerId)
+        if (!player) return prev
+        const next = new Map(prev)
+        next.set(msg.playerId, { ...player, lastChat: msg.text, lastChatAt: msg.timestamp })
+        return next
+      })
+    })
+
+    // ping/pong で接続品質計測
+    pingTimerRef.current = setInterval(() => {
+      pingSentAt.current = Date.now()
+      socket.emit('ping')
+    }, 3000)
+
+    socket.on('pong', () => {
+      setPing(Date.now() - pingSentAt.current)
     })
 
     return () => {
       socket.disconnect()
+      if (pingTimerRef.current) clearInterval(pingTimerRef.current)
     }
   }, [enabled])
 
@@ -128,6 +161,7 @@ export function useMultiplayer(enabled: boolean) {
     remotePlayers,
     chatMessages,
     connected,
+    ping,
     sendMove,
     sendChat,
   }

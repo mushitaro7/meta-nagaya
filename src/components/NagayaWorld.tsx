@@ -304,6 +304,7 @@ interface NagayaWorldProps {
   isExploring: boolean
   isMoving: boolean
   selfColor?: string
+  selfName?: string
   remotePlayers?: Map<string, RemotePlayer>
   onMove?: (pos: { x: number; y: number; z: number }, rotation: number) => void
   onBuildingClick?: (areaId: string, areaLabel: string, buildingIndex: number) => void
@@ -334,6 +335,7 @@ export default function NagayaWorld({
   isExploring,
   isMoving,
   selfColor = '#54A0FF',
+  selfName,
   remotePlayers = new Map(),
   onMove,
   onBuildingClick,
@@ -491,12 +493,16 @@ export default function NagayaWorld({
 
       {/* === 自分のアバター（移動モード時のみ表示） === */}
       {isMoving && (
-        <PlayerAvatar ref={playerRef} color={selfColor} />
+        <PlayerAvatar ref={playerRef} color={selfColor} isWalking={isMoving} name={selfName} />
       )}
 
       {/* === 他プレイヤーのアバター === */}
       {Array.from(remotePlayers.values()).map(player => (
-        <RemotePlayerAvatar key={player.id} player={player} />
+        <RemotePlayerAvatar
+          key={player.id}
+          player={player}
+          lastChatText={player.lastChat}
+        />
       ))}
     </>
   )

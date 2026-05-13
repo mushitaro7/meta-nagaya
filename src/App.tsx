@@ -177,7 +177,7 @@ function App() {
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // マルチプレイヤー（探索中のみ有効）
-  const { self, remotePlayers, chatMessages, connected, sendMove, sendChat } = useMultiplayer(isExploring)
+  const { self, remotePlayers, chatMessages, connected, ping, sendMove, sendChat } = useMultiplayer(isExploring)
 
   const handleLoaded = useCallback(() => {
     let progress = 0
@@ -338,6 +338,7 @@ function App() {
             isExploring={isExploring}
             isMoving={isMoving}
             selfColor={self?.color ?? '#54A0FF'}
+            selfName={self?.name}
             remotePlayers={remotePlayers}
             onMove={handleMove}
             onBuildingClick={handleBuildingClick}
@@ -389,7 +390,20 @@ function App() {
         {connected && (
           <div className="hud-online">
             <span className="hud-online-dot" />
-            {remotePlayers.size + 1}人オンライン
+            <span>{remotePlayers.size + 1}人オンライン</span>
+            {ping !== null && ping !== undefined && (
+              <span className="hud-ping" style={{ color: ping < 100 ? '#1DD1A1' : ping < 300 ? '#FECA57' : '#FF6B6B' }}>
+                {ping}ms
+              </span>
+            )}
+          </div>
+        )}
+        {!connected && isExploring && (
+          <div className="hud-offline">○ オフライン</div>
+        )}
+        {self && connected && (
+          <div className="hud-self-name" style={{ color: self.color }}>
+            {self.name}
           </div>
         )}
       </div>

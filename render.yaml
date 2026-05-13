@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: meta-nagaya-server
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: CLIENT_URL
+        value: https://meta-nagaya.vercel.app
+    healthCheckPath: /health
