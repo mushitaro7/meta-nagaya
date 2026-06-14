@@ -1,39 +1,58 @@
 /**
- * プレイヤーアバターコンポーネント（強化版）
+ * プレイヤーアバターコンポーネント（修正版）
  * - 名前タグ（Billboard + Text）
- * - 歩行ボブアニメーション
+ * - 歩行ボブアニメーション（useFrame直接制御 / state更新なし）
  * - チャット吹き出し（3D空間内）
  * - lerp補間スムーズ移動
  */
-import { useRef, forwardRef, useState, useEffect } from 'react'
+import { useRef, forwardRef, useState, useEffect, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Billboard, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { RemotePlayer } from '../hooks/useMultiplayer'
 
 /* ===========================
-   和風アバター本体（共通パーツ）
+   和風アバター本体（useFrame直接制御版）
+   Reactのstate更新を一切使わない → 親の再レンダーを起こさない
    =========================== */
-interface AvatarBodyProps {
+interface AvatarBodyRefProps {
   color: string
-  isWalking?: boolean
-  walkPhase?: number
+  walkingRef: React.MutableRefObject<boolean>
+  walkPhaseRef: React.MutableRefObject<number>
 }
 
-function AvatarBody({ color, isWalking = false, walkPhase = 0 }: AvatarBodyProps) {
-  // 歩行アニメ
-  const leftLegSwing  = isWalking ? Math.sin(walkPhase * 6) * 0.25 : 0
-  const rightLegSwing = isWalking ? -Math.sin(walkPhase * 6) * 0.25 : 0
-  const leftArmSwing  = isWalking ? -Math.sin(walkPhase * 6) * 0.3 : 0
-  const rightArmSwing = isWalking ? Math.sin(walkPhase * 6) * 0.3 : 0
-  const bodyBob       = isWalking ? Math.abs(Math.sin(walkPhase * 6)) * 0.04 : 0
+function AvatarBodyAnimated({ color, walkingRef, walkPhaseRef }: AvatarBodyRefProps) {
+  // 各パーツのrefを持つ
+  const bodyRef = useRef<THREE.Group>(null)
+  const leftLegRef = useRef<THREE.Group>(null)
+  const rightLegRef = useRef<THREE.Group>(null)
+  const leftArmRef = useRef<THREE.Group>(null)
+  const rightArmRef = useRef<THREE.Group>(null)
+
+  useFrame((_, delta) => {
+    const isWalking = walkingRef.current
+    if (isWalking) {
+      walkPhaseRef.current += delta
+    }
+    const phase = walkPhaseRef.current
+    const swing = isWalking ? Math.sin(phase * 6) : 0
+    const bob = isWalking ? Math.abs(Math.sin(phase * 6)) * 0.04 : 0
+
+    if (bodyRef.current) bodyRef.current.position.y = bob
+    if (leftLegRef.current) leftLegRef.current.rotation.x = swing * 0.25
+    if (rightLegRef.current) rightLegRef.current.rotation.x = -swing * 0.25
+    if (leftArmRef.current) leftArmRef.current.rotation.x = -swing * 0.3
+    if (rightArmRef.current) rightArmRef.current.rotation.x = swing * 0.3
+  })
+
+  const bodyColor = useMemo(() => color, [color])
 
   return (
-    <group position={[0, bodyBob, 0]}>
+    <group ref={bodyRef}>
       {/* 体（着物風・縦長） */}
       <mesh position={[0, 1.05, 0]} castShadow>
         <boxGeometry args={[0.52, 0.78, 0.34]} />
-        <meshStandardMaterial color={color} roughness={0.55} metalness={0.05} />
+        <meshStandardMaterial color={bodyColor} roughness={0.55} metalness={0.05} />
       </mesh>
 
       {/* 帯 */}
@@ -60,7 +79,7 @@ function AvatarBody({ color, isWalking = false, walkPhase = 0 }: AvatarBodyProps
         <meshStandardMaterial color="#1A252F" />
       </mesh>
 
-      {/* 口（小さな赤い点） */}
+      {/* 口 */}
       <mesh position={[0, 1.64, 0.26]}>
         <sphereGeometry args={[0.022, 4, 4]} />
         <meshStandardMaterial color="#C0392B" />
@@ -79,23 +98,23 @@ function AvatarBody({ color, isWalking = false, walkPhase = 0 }: AvatarBodyProps
       </mesh>
 
       {/* 腕（左） */}
-      <group position={[-0.36, 1.05, 0]} rotation={[leftArmSwing, 0, 0]}>
+      <group ref={leftArmRef} position={[-0.36, 1.05, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.17, 0.58, 0.2]} />
-          <meshStandardMaterial color={color} roughness={0.55} />
+          <meshStandardMaterial color={bodyColor} roughness={0.55} />
         </mesh>
       </group>
 
       {/* 腕（右） */}
-      <group position={[0.36, 1.05, 0]} rotation={[rightArmSwing, 0, 0]}>
+      <group ref={rightArmRef} position={[0.36, 1.05, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.17, 0.58, 0.2]} />
-          <meshStandardMaterial color={color} roughness={0.55} />
+          <meshStandardMaterial color={bodyColor} roughness={0.55} />
         </mesh>
       </group>
 
       {/* 足（左） */}
-      <group position={[-0.14, 0.32, 0]} rotation={[leftLegSwing, 0, 0]}>
+      <group ref={leftLegRef} position={[-0.14, 0.32, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.19, 0.56, 0.26]} />
           <meshStandardMaterial color="#2C3E50" roughness={0.8} />
@@ -103,7 +122,7 @@ function AvatarBody({ color, isWalking = false, walkPhase = 0 }: AvatarBodyProps
       </group>
 
       {/* 足（右） */}
-      <group position={[0.14, 0.32, 0]} rotation={[rightLegSwing, 0, 0]}>
+      <group ref={rightLegRef} position={[0.14, 0.32, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.19, 0.56, 0.26]} />
           <meshStandardMaterial color="#2C3E50" roughness={0.8} />
@@ -125,19 +144,16 @@ interface PlayerAvatarProps {
 
 export const PlayerAvatar = forwardRef<THREE.Group, PlayerAvatarProps>(
   ({ color = '#54A0FF', isWalking = false, name = 'あなた' }, ref) => {
+    // isWalkingをrefで保持（state更新を避ける）
+    const walkingRef = useRef(isWalking)
     const walkPhaseRef = useRef(0)
-    const [phase, setPhase] = useState(0)
 
-    useFrame((_, delta) => {
-      if (isWalking) {
-        walkPhaseRef.current += delta
-        setPhase(walkPhaseRef.current)
-      }
-    })
+    // isWalkingプロップが変化したらrefだけ更新（再レンダーなし）
+    walkingRef.current = isWalking
 
     return (
       <group ref={ref}>
-        <AvatarBody color={color} isWalking={isWalking} walkPhase={phase} />
+        <AvatarBodyAnimated color={color} walkingRef={walkingRef} walkPhaseRef={walkPhaseRef} />
 
         {/* 名前タグ（自分） */}
         <Billboard follow lockX={false} lockY={false} lockZ={false}>
@@ -149,7 +165,6 @@ export const PlayerAvatar = forwardRef<THREE.Group, PlayerAvatarProps>(
             outlineColor="#1A1A2E"
             anchorX="center"
             anchorY="middle"
-            font="https://fonts.gstatic.com/s/notosansjp/v53/-F6jfJtkLLgws2zOKAQoJTU88ck.woff2"
           >
             {name}（あなた）
           </Text>
@@ -177,17 +192,15 @@ export function RemotePlayerAvatar({ player, lastChatText }: RemotePlayerAvatarP
   const groupRef = useRef<THREE.Group>(null)
   const targetPos = useRef(new THREE.Vector3(player.position.x, player.position.y, player.position.z))
   const targetRot = useRef(player.rotation)
+  const walkingRef = useRef(false)
   const walkPhaseRef = useRef(0)
-  const [phase, setPhase] = useState(0)
-  const [isMoving, setIsMoving] = useState(false)
   const prevPos = useRef(new THREE.Vector3(player.position.x, player.position.y, player.position.z))
 
-  // チャット吹き出し表示制御
+  // チャット吹き出し（これだけstateでOK：アバターのrefに影響しない）
   const [showChat, setShowChat] = useState(false)
   const [chatText, setChatText] = useState('')
   const chatTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // lastChatTextが変わったら吹き出しを表示
   useEffect(() => {
     if (!lastChatText) return
     setChatText(lastChatText)
@@ -197,11 +210,11 @@ export function RemotePlayerAvatar({ player, lastChatText }: RemotePlayerAvatarP
     return () => { if (chatTimerRef.current) clearTimeout(chatTimerRef.current) }
   }, [lastChatText])
 
-  // サーバーからの位置・回転を目標にセット
+  // サーバーからの位置・回転を目標にセット（レンダー外）
   targetPos.current.set(player.position.x, player.position.y, player.position.z)
   targetRot.current = player.rotation
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     if (!groupRef.current) return
 
     // lerp補間
@@ -211,14 +224,8 @@ export function RemotePlayerAvatar({ player, lastChatText }: RemotePlayerAvatarP
     // 移動検知（歩行アニメ用）
     const curPos = groupRef.current.position
     const dist = curPos.distanceTo(prevPos.current)
-    const moving = dist > 0.005
-    setIsMoving(moving)
+    walkingRef.current = dist > 0.004
     prevPos.current.copy(curPos)
-
-    if (moving) {
-      walkPhaseRef.current += delta
-      setPhase(walkPhaseRef.current)
-    }
   })
 
   return (
@@ -226,7 +233,7 @@ export function RemotePlayerAvatar({ player, lastChatText }: RemotePlayerAvatarP
       ref={groupRef}
       position={[player.position.x, player.position.y, player.position.z]}
     >
-      <AvatarBody color={player.color} isWalking={isMoving} walkPhase={phase} />
+      <AvatarBodyAnimated color={player.color} walkingRef={walkingRef} walkPhaseRef={walkPhaseRef} />
 
       {/* 名前タグ */}
       <Billboard follow lockX={false} lockY={false} lockZ={false}>
@@ -245,7 +252,6 @@ export function RemotePlayerAvatar({ player, lastChatText }: RemotePlayerAvatarP
           outlineColor="#000000"
           anchorX="center"
           anchorY="middle"
-          font="https://fonts.gstatic.com/s/notosansjp/v53/-F6jfJtkLLgws2zOKAQoJTU88ck.woff2"
         >
           {player.name}
         </Text>
@@ -253,12 +259,10 @@ export function RemotePlayerAvatar({ player, lastChatText }: RemotePlayerAvatarP
         {/* チャット吹き出し */}
         {showChat && (
           <>
-            {/* 吹き出し背景 */}
             <mesh position={[0, 3.2, 0]}>
               <planeGeometry args={[Math.min(2.2, chatText.length * 0.18 + 0.4), 0.5]} />
               <meshBasicMaterial color="#FFFFFF" transparent opacity={0.92} side={2} depthWrite={false} />
             </mesh>
-            {/* 吹き出しテキスト */}
             <Text
               position={[0, 3.2, 0.01]}
               fontSize={0.22}
@@ -266,7 +270,6 @@ export function RemotePlayerAvatar({ player, lastChatText }: RemotePlayerAvatarP
               maxWidth={2.0}
               anchorX="center"
               anchorY="middle"
-              font="https://fonts.gstatic.com/s/notosansjp/v53/-F6jfJtkLLgws2zOKAQoJTU88ck.woff2"
             >
               {chatText}
             </Text>
